@@ -133,6 +133,9 @@ class Machine:
         self.handle_autoplay()
         self.win_animation()
 
+    def adjust_bet(self, amount):
+        self.currPlayer.bet_size = max(10, self.currPlayer.bet_size + amount)
+
     def handle_autoplay(self):
         current_time = pygame.time.get_ticks()
         if self.auto_spin_active and (current_time - self.last_auto_spin_time > AUTO_SPIN_INTERVAL):

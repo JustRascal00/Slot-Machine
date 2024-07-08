@@ -25,7 +25,8 @@ class UI:
             'bet_up': BET_BUTTON_SIZE,
             'bet_down': BET_BUTTON_SIZE,
         }
-
+        
+        self.last_mouse_state = (False, False, False)
     def create_button(self, text, position, size, color, hover_color, font_color):
         mouse_pos = pygame.mouse.get_pos()
         button_rect = pygame.Rect(position, size)
@@ -37,21 +38,25 @@ class UI:
         return button_rect
 
     def handle_buttons(self):
-        mouse_click = pygame.mouse.get_pressed()
+        current_mouse_state = pygame.mouse.get_pressed()
         spin_button = self.create_button("Spin", self.button_positions['spin'], self.button_sizes['spin'], BUTTON_COLOR, BUTTON_HOVER_COLOR, BUTTON_FONT_COLOR)
         auto_button = self.create_button("Autoplay", self.button_positions['autoplay'], self.button_sizes['autoplay'], BUTTON_COLOR, BUTTON_HOVER_COLOR, BUTTON_FONT_COLOR)
         bet_up_button = self.create_button("+", self.button_positions['bet_up'], self.button_sizes['bet_up'], BUTTON_COLOR, BUTTON_HOVER_COLOR, BUTTON_FONT_COLOR)
         bet_down_button = self.create_button("-", self.button_positions['bet_down'], self.button_sizes['bet_down'], BUTTON_COLOR, BUTTON_HOVER_COLOR, BUTTON_FONT_COLOR)
 
-        if spin_button.collidepoint(pygame.mouse.get_pos()) and mouse_click[0]:
-            return 'spin'
-        elif auto_button.collidepoint(pygame.mouse.get_pos()) and mouse_click[0]:
-            return 'autoplay'
-        elif bet_up_button.collidepoint(pygame.mouse.get_pos()) and mouse_click[0]:
-            return 'bet_up'
-        elif bet_down_button.collidepoint(pygame.mouse.get_pos()) and mouse_click[0]:
-            return 'bet_down'
-        return None
+        action = None
+        if current_mouse_state[0] and not self.last_mouse_state[0]:
+            if spin_button.collidepoint(pygame.mouse.get_pos()):
+                action = 'spin'
+            elif auto_button.collidepoint(pygame.mouse.get_pos()):
+                action = 'autoplay'
+            elif bet_up_button.collidepoint(pygame.mouse.get_pos()):
+                action = 'bet_up'
+            elif bet_down_button.collidepoint(pygame.mouse.get_pos()):
+                action = 'bet_down'
+
+        self.last_mouse_state = current_mouse_state
+        return action
 
     def display_info(self):
         player_data = self.player.get_data()
