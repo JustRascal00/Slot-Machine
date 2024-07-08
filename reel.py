@@ -3,39 +3,40 @@ import pygame
 import random
 
 class Reel:
-    def __init__(self, x_pos):
+    def __init__(self, pos):
         self.symbol_list = pygame.sprite.Group()
         self.shuffled_keys = list(symbols.keys())
         random.shuffle(self.shuffled_keys)
-        self.shuffled_keys = self.shuffled_keys[:5]  # Only matters when there are more than 5 symbols
+        self.shuffled_keys = self.shuffled_keys[:5] # Only matters when there are more than 5 symbols
 
         self.reel_is_spinning = False
-        self.delay_time = 0
-        self.spin_time = 0
-        self.x = x_pos
 
-        # Create symbols at specified positions
-        for idx in range(5):
-            pos = (x_pos, idx * 300 - 300)
-            self.symbol_list.add(Symbol(symbols[self.shuffled_keys[idx]], pos, idx))
+        for idx, item in enumerate(self.shuffled_keys):
+            self.symbol_list.add(Symbol(symbols[item], pos, idx))
+            pos = list(pos)
+            pos[1] += 300
+            pos = tuple(pos)
 
     def animate(self, delta_time):
         if self.reel_is_spinning:
             self.delay_time -= (delta_time * 1000)
             self.spin_time -= (delta_time * 1000)
-            reel_is_stopping = self.spin_time < 0
+            reel_is_stopping = False
+
+            if self.spin_time < 0:
+                reel_is_stopping = True
 
             if self.delay_time <= 0:
                 for symbol in self.symbol_list:
-                    symbol.rect.y += 40
+                    symbol.rect.bottom += 100
 
-                    if symbol.rect.top >= VIRTUAL_REEL_HEIGHT:  # Use VIRTUAL_REEL_HEIGHT here
+                    if symbol.rect.top == 1200:
                         if reel_is_stopping:
                             self.reel_is_spinning = False
 
                         symbol_idx = symbol.idx
                         symbol.kill()
-                        self.symbol_list.add(Symbol(symbols[random.choice(self.shuffled_keys)], (self.x, -300), symbol_idx))
+                        self.symbol_list.add(Symbol(symbols[random.choice(self.shuffled_keys)], ((symbol.x_val), -300), symbol_idx))
 
     def start_spin(self, delay_time):
         self.delay_time = delay_time
@@ -43,42 +44,25 @@ class Reel:
         self.reel_is_spinning = True
 
     def reel_spin_result(self):
-        result = []
-        for symbol in sorted(self.symbol_list, key=lambda s: s.idx):
-            if symbol.idx < 3:
-                result.append(symbol.sym_type)
-        return result
+        spin_result = []
+        for sym in self.symbol_list:
+            if sym.rect.top == 0:
+                spin_result.append(sym.symbol_key)
+        return spin_result
 
 class Symbol(pygame.sprite.Sprite):
-    def __init__(self, pathToFile, pos, idx):
+    def __init__(self, image_path, position, idx):
         super().__init__()
-
-        # Friendly name
-        self.sym_type = pathToFile.split('/')[3].split('.')[0]
-
-        self.pos = pos
+        self.image = pygame.image.load(image_path).convert_alpha()
+        self.rect = self.image.get_rect(topleft=position)
         self.idx = idx
-        self.image = pygame.image.load(pathToFile).convert_alpha()
-        self.rect = self.image.get_rect(topleft=pos)
-        self.x_val = self.rect.left
-
-        # Used for win animations
-        self.size_x = 300
-        self.size_y = 300
-        self.alpha = 255
-        self.fade_out = False
+        self.x_val = position[0]
+        self.symbol_key = image_path  # Assuming image_path is the key in the symbols dictionary
         self.fade_in = False
+        self.fade_out = False
 
     def update(self):
-        # Slightly increases size of winning symbols
         if self.fade_in:
-            if self.size_x < 320:
-                self.size_x += 1
-                self.size_y += 1
-                self.image = pygame.transform.scale(self.image, (self.size_x, self.size_y))
-
-        # Fades out non-winning symbols
-        elif not self.fade_in and self.fade_out:
-            if self.alpha > 115:
-                self.alpha -= 7
-                self.image.set_alpha(self.alpha)
+            self.image.set_alpha(min(self.image.get_alpha() + 10, 255))
+        if self.fade_out:
+            self.image.set_alpha(max(self.image.get_alpha() - 10, 0))
