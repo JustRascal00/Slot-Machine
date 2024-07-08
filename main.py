@@ -27,20 +27,15 @@ class Game:
         self.start_time = pygame.time.get_ticks()
 
         while True:
-            # Handle quit operation
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
 
-            # Time variables
-            self.delta_time = (pygame.time.get_ticks() - self.start_time) / 1000
-            self.start_time = pygame.time.get_ticks()
-
-            pygame.display.update()
             self.screen.blit(self.bg_image, (0, 0))
-            self.machine.update(self.delta_time)
+            self.machine.update(self.clock.get_time() / 1000)
             self.screen.blit(self.grid_image, (0, 0))
+            pygame.display.update()
             self.clock.tick(FPS)
 
 if __name__ == '__main__':

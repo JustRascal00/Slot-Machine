@@ -37,3 +37,22 @@ symbols = {
     'hourglass2': f"{SYM_PATH}/0_hourglass.png",
     'telephone': f"{SYM_PATH}/0_telephone.png"
 }
+
+# Autoplay settings
+AUTO_SPIN_INTERVAL = 1000  # Interval between spins in milliseconds
+
+# Button settings
+BUTTON_COLOR = (0, 200, 0)
+BUTTON_HOVER_COLOR = (0, 255, 0)
+BUTTON_FONT_COLOR = 'White'
+BUTTON_FONT_SIZE = 25
+
+# Button dimensions and positions
+SPIN_BUTTON_POS = (1400, 910)
+SPIN_BUTTON_SIZE = (150, 60)
+AUTO_BUTTON_POS = (1200, 910)
+AUTO_BUTTON_SIZE = (150, 60)
+BET_UP_BUTTON_POS = (1600, 850)
+BET_DOWN_BUTTON_POS = (1600, 920)
+BET_BUTTON_SIZE = (50, 50)
+VIRTUAL_REEL_HEIGHT = 1200
