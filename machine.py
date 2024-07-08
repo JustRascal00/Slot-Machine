@@ -19,7 +19,8 @@ class Machine:
 
         self.prev_result = {0: None, 1: None, 2: None, 3: None, 4: None}
         self.spin_result = {0: None, 1: None, 2: None, 3: None, 4: None}
-
+        
+        self.win_data = {}
         self.spawn_reels()
         self.currPlayer = Player()
         self.ui = UI(self.currPlayer)
@@ -50,6 +51,11 @@ class Machine:
 
     def draw_reels(self, delta_time):
         for reel in self.reel_list.values():
+            for symbol in reel.symbol_list:
+                # Calculate the center position for the symbol
+                slot_center_x = symbol.rect.x + symbol.rect.width // 2
+                slot_center_y = symbol.rect.y + symbol.rect.height // 2
+                symbol.rect.center = (slot_center_x, slot_center_y)
             reel.symbol_list.draw(self.display_surface)
             reel.symbol_list.update()
             reel.animate(delta_time)
@@ -113,6 +119,9 @@ class Machine:
                         if not symbol.fade_in:
                             symbol.fade_out = True
 
+            # Draw lines for winning combinations
+            self.draw_win_lines()
+
     def update(self, delta_time):
         self.cooldowns()
         self.input()
@@ -146,3 +155,20 @@ class Machine:
 
     def adjust_bet(self, amount):
         self.currPlayer.bet_size = max(10, self.currPlayer.bet_size + amount)
+
+    def draw_win_lines(self):
+        line_color = (255, 0, 0)  # Red color for the win lines
+        for k, v in self.win_data.items():
+            if k == 1:
+                y_pos = 220  # Adjust as needed for row 1
+            elif k == 2:
+                y_pos = 440  # Adjust as needed for row 2
+            elif k == 3:
+                y_pos = 660  # Adjust as needed for row 3
+
+            # Draw horizontal line for the winning row
+            if v[1]:
+                x_start = 30 + v[1][0] * 320  # Adjust as needed for column start
+                x_end = 30 + (v[1][-1] + 1) * 320  # Adjust as needed for column end
+                pygame.draw.line(self.display_surface, line_color, (x_start, y_pos), (x_end, y_pos), 5)
+
