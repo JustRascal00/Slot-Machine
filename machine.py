@@ -16,6 +16,7 @@ class Machine:
         self.win_animation_ongoing = False
         self.auto_spin_active = False
         self.last_auto_spin_time = 0
+        self.win_animation_start_time = None
 
         self.prev_result = {0: None, 1: None, 2: None, 3: None, 4: None}
         self.spin_result = {0: None, 1: None, 2: None, 3: None, 4: None}
@@ -32,18 +33,20 @@ class Machine:
 
         if not self.can_toggle and all(not reel.reel_is_spinning for reel in self.reel_list.values()):
             self.can_toggle = True
+            self.spinning = False
             self.spin_result = self.get_result()
 
             if self.check_wins(self.spin_result):
                 self.win_data = self.check_wins(self.spin_result)
                 self.pay_player(self.win_data, self.currPlayer)
                 self.win_animation_ongoing = True
+                self.win_animation_start_time = pygame.time.get_ticks()
                 self.ui.win_text_angle = random.randint(-4, 4)
 
     def input(self):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE] and self.can_toggle and self.currPlayer.balance >= self.currPlayer.bet_size:
-            self.toggle_spinning()
+            self.start_spinning()
             self.currPlayer.place_bet()
             self.machine_balance += self.currPlayer.bet_size
             self.currPlayer.last_payout = None
@@ -59,14 +62,13 @@ class Machine:
         for i, pos in enumerate(reel_positions):
             self.reel_list[i] = Reel(pos)
 
-    def toggle_spinning(self):
+    def start_spinning(self):
         if self.can_toggle:
-            self.spinning = not self.spinning
+            self.spinning = True
             self.can_toggle = False
             for i, reel in self.reel_list.items():
                 reel.start_spin(i * 200)
             self.win_animation_ongoing = False
-
     def get_result(self):
         for i, reel in self.reel_list.items():
             self.spin_result[i] = reel.reel_spin_result()
@@ -112,14 +114,19 @@ class Machine:
                     for symbol in self.reel_list[reel].symbol_list:
                         if not symbol.fade_in:
                             symbol.fade_out = True
+    def is_win_animation_complete(self):
+        current_time = pygame.time.get_ticks()
+        if self.win_animation_start_time is not None:
+            return current_time - self.win_animation_start_time > WIN_ANIMATION_DURATION
+        return True                       
 
     def update(self, delta_time):
         self.cooldowns()
         self.input()
         self.draw_reels(delta_time)
-        button_action = self.ui.update()
+        button_action = self.ui.update(self.auto_spin_active)  # Pass auto_spin_active
         if button_action == 'spin' and self.can_toggle and self.currPlayer.balance >= self.currPlayer.bet_size:
-            self.toggle_spinning()
+            self.start_spinning()
             self.currPlayer.place_bet()
             self.machine_balance += self.currPlayer.bet_size
             self.currPlayer.last_payout = None
@@ -138,14 +145,21 @@ class Machine:
 
     def handle_autoplay(self):
         current_time = pygame.time.get_ticks()
-        if self.auto_spin_active and (current_time - self.last_auto_spin_time > AUTO_SPIN_INTERVAL):
-            if self.currPlayer.balance >= self.currPlayer.bet_size:
-                self.toggle_spinning()
-                self.last_auto_spin_time = current_time
+        if self.auto_spin_active and not self.spinning and self.is_win_animation_complete():
+            if current_time - self.last_auto_spin_time > AUTO_SPIN_INTERVAL:
+                if self.currPlayer.balance >= self.currPlayer.bet_size:
+                    self.last_auto_spin_time = current_time  # Update time first
+                    self.start_spinning()
+                    self.currPlayer.place_bet()  # Place the bet
+                    self.machine_balance += self.currPlayer.bet_size  # Update machine balance
+                    self.currPlayer.last_payout = None
+                else:
+                    self.auto_spin_active = False  # Stop autoplay if balance is insufficient
 
     def toggle_autoplay(self):
         self.auto_spin_active = not self.auto_spin_active
         self.last_auto_spin_time = pygame.time.get_ticks()
+
 
     def adjust_bet(self, amount):
         self.currPlayer.bet_size = max(10, self.currPlayer.bet_size + amount)

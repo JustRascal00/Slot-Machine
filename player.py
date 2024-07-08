@@ -18,6 +18,6 @@ class Player():
         return player_data
 
     def place_bet(self):
-        bet = self.bet_size
-        self.balance -= bet
-        self.total_wager += bet
+        print("Bet placed. Current balance before bet:", self.balance)
+        self.balance -= self.bet_size
+        print("Bet placed. Current balance after bet:", self.balance)
